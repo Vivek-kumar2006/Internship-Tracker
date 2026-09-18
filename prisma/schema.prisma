@@ -5,9 +5,126 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+ output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum ROLE {
+  ADMIN
+  USER
+}
+
+enum OPPORTUNITY_TYPE {
+  INTERNSHIP
+  HACKATHON
+  JOB
+  SCHOLARSHIP
+}
+
+enum OPPORTUNITY_SOURCE {
+  ADMIN
+  USER
+}
+
+enum OPPORTUNITY_VERIFIED {
+   APPROVED
+   REJECTED
+}
+
+enum OPPORTUNITY_STATUS {
+  APPLIED
+  NOT_APPLIED
+  SELECTED
+  REJECTED
+}
+
+enum CHANNEL {
+  EMAIL
+  PUSH_NOTIFICATION
+}
+
+
+enum FIELD{
+  BACKEND
+  FRONTEND
+  APPLIED_AI
+  FULL_STACK
+  DATA_SCIENCE
+  
+}
+
+enum NOTIFICATION_STATUS {
+  PENDING
+  QUEUED
+  SENT
+  FAILED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String?  @unique
+  password  String
+  role      ROLE     @default(USER)
+  createdAt DateTime @default(now())
+
+  opportunities Opportunity[]
+  notifications Notification[]
+
+  @@index([email])
+}
+
+model Opportunity {
+  id      String           @id @default(uuid())
+  userId  String
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title   String
+  type    OPPORTUNITY_TYPE
+  source  OPPORTUNITY_SOURCE  
+  isShared   Boolean   @default(false)
+  verificationStatus  OPPORTUNITY_VERIFIED  
+
+  rejectionReason   String ? 
+  reviewedAdminID   String?
+  reviewedAt        DateTime
+  reminderJobID   String?
+  field   FIELD
+  sourceLink  String
+  eligiblity_Notes String
+  channel CHANNEL
+  deadline DateTime
+  status  OPPORTUNITY_STATUS  @default(NOT_APPLIED)
+  reminderJobId  String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @default(now())
+
+  @@index([userId])
+  @@index([field])
+  @@index([deadline])
+  @@index([isShared,verificationStatus])
+}
+
+model Notification{
+    id      String           @id @default(uuid())
+  userId  String
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel CHANNEL
+  recipient String
+  eventType String
+  payload  Json
+  priority   Int  @default(1)
+  status  NOTIFICATION_STATUS  @default(PENDING)
+  attempts  Int   @default(0)
+  maxAttempts Int  @default(3)
+  lastError  String?
+  sentAt   DateTime   @default(now())
+  createdAt  DateTime   @default(now())
+
+   @@index([userId])
+   @@index([status])
+
 }
