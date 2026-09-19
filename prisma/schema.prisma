@@ -74,6 +74,7 @@ model User {
 
   opportunities Opportunity[]
   notifications Notification[]
+  RefreshTokens  RefreshTokens[]
 
   @@index([email])
 }
@@ -127,4 +128,17 @@ model Notification{
    @@index([userId])
    @@index([status])
 
+}
+
+
+
+model RefreshTokens {
+  id     String  @id @default(uuid())
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+  token  String
+  expiresAt DateTime 
+  revoked   Boolean   @default(false)
+  createdAt    DateTime @default(now())
+  
 }
