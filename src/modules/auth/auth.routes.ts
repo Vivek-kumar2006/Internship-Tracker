@@ -16,6 +16,7 @@ router.post("/auth/register", validate({ body: RegisterUserSchema }), registerha
 router.post("/auth/login", validate({ body: LoginUserSchema }), loginhandler);
 //router.post("/register/customer", validate({ body: RegisterUserSchema }),verifyRoles('CUSTOMER'), registerhandler);
 
+router.post("/blacklist",authenticate,)
 router.post("/refresh", authenticate,refreshTokenhandler);
 router.post("/logout", authenticate,logouthandler);
 

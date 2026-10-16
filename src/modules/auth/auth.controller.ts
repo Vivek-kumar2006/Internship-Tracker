@@ -7,10 +7,11 @@ import {
     hashed,
     verifyAccessToken
 } from '../../utils/jwt.js';
+import jwt,{JwtPayload} from "jsonwebtoken";
+import { blackListToken } from './auth.blacklist.js'
 const REFRESH_COOKIE_PATH = '/auth/refresh';
 
 import { Request, Response, NextFunction } from 'express';
-
 
 export const loginhandler = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -164,7 +165,15 @@ export const logouthandler = async (req: Request, res: Response, next: NextFunct
                 where: { token: hashedToken }
             });
         }
+            const token =  req.cookies?.accessToken;
 
+  if (token) {
+    const decoded = jwt.decode(token) as JwtPayload | null;
+
+    if (decoded?.jti && decoded?.exp) {
+      await blackListToken(decoded.jti, decoded.exp);
+    }
+  }
         res.clearCookie('accessToken', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -172,7 +181,7 @@ export const logouthandler = async (req: Request, res: Response, next: NextFunct
         });
 
         res.clearCookie('refreshToken', {
-            //httpOnly: true,
+            httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax'
         });
@@ -183,3 +192,5 @@ export const logouthandler = async (req: Request, res: Response, next: NextFunct
         next(error);
     }
 };
+
+

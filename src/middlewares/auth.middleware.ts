@@ -1,7 +1,9 @@
 import {
     verifyAccessToken
 } from '../utils/jwt.js';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
+import { isTokenBlacklisted } from '../modules/auth/auth.blacklist.js'
 import { Request, Response, NextFunction } from 'express';
 
 declare global {
@@ -15,6 +17,7 @@ declare global {
         }
     }
 }
+
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -30,6 +33,21 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             userId: payload.userId.toString(),
             role: payload.role.toString()
         }
+
+        const decoded = jwt.verify(
+            token,
+            process.env.ACCESS_TOKEN_SECRET || 'access_token_secret_hai_ye'
+        ) as JwtPayload;
+
+        console.log(decoded);
+
+        if (decoded.jti && await isTokenBlacklisted(decoded.jti)) {
+            res.status(401).json({ message: 'Token has been revoked. Please log in again.' });
+            return;
+        }
+
+
+        ///  req.user=decoded
 
         next()
     } catch (error) {

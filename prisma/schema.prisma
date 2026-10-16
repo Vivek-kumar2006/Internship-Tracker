@@ -92,11 +92,10 @@ model Opportunity {
   rejectionReason   String ? 
   reviewedAdminID   String?
   reviewedAt        DateTime
-  reminderJobID   String?
   field   FIELD
   sourceLink  String
   eligiblity_Notes String
-  channel CHANNEL
+  //channel CHANNEL
   deadline DateTime
   status  OPPORTUNITY_STATUS  @default(NOT_APPLIED)
   reminderJobId  String?
