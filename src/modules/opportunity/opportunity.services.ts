@@ -4,6 +4,9 @@ import { CreateOpportunityInput } from './opportunity.schema.js'
 import { ApiError } from '../../utils/ApiError.js';
 import { OPPORTUNITY_STATUS } from '../../../generated/prisma/enums.js';
 import { json } from 'zod';
+import { tr } from 'zod/locales';
+import { cancelReminder, scheduleReminder } from './reminder.services.js';
+import { response } from 'express';
 
 const redis = new Redis();
 
@@ -11,9 +14,10 @@ export async function CreateOpportunity(userId: string, data: CreateOpportunityI
     const opportunity = await prisma.opportunity.create(
         {
             data: { userId, ...data }
-        }
+        })
 
-        const jobId = scheduleReminder(opportunity)
+        const jobId = await scheduleReminder(opportunity)
+
 
     await prisma.opportunity.update({
         where: { id: opportunity.id },
@@ -21,7 +25,7 @@ export async function CreateOpportunity(userId: string, data: CreateOpportunityI
     })
     await redis.del(`dashboard:upcoming:${userId}`)
     return opportunity
-    )
+    
 }
 
 export async function UpadteOpportunity(id: string, userId: string, data: Partial<CreateOpportunityInput>) {
@@ -41,8 +45,12 @@ export async function UpadteOpportunity(id: string, userId: string, data: Partia
         data: data
     })
 
+    // if (updated) {
+    //     response.send("Opportunity is updated")
+    // }
+
     if (data.deadline) {
-        const jobId = scheduleReminder(updated)
+        const jobId = await scheduleReminder(updated)
         await prisma.opportunity.update({
             where: { id },
             data: { reminderJobId: jobId }
@@ -62,13 +70,14 @@ export async function UpadteStatus(id: string, userId: string, status: OPPORTUNI
     }
 
     const updated = await prisma.opportunity.update({
-        where: { id },
-        data: { status }
+        where: {id},
+        data: {status}
     })
 
     if (status != "NOT_APPLIED" && updated.reminderJobId) {
         await cancelReminder(updated.reminderJobId)
     }
+    
 
     await redis.del(`dashboard:upcoming:${userId}`)
     return updated
@@ -89,6 +98,16 @@ export async function getUpcomingDashboard(userId: string) {
         orderBy: { deadline: 'asc' }
     })
 
-    
+    const stats= await prisma.opportunity.groupBy({
+        by:['status'],
+        where:{userId},
+        _count:true
+    })
+
+    const dashboard={opportunities,stats}
+
+    await redis.set(cacheKey,JSON.stringify(dashboard),'EX',60)
+
+    return dashboard
 }
 

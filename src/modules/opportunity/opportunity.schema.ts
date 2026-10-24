@@ -10,7 +10,7 @@ export const createOpportunitySchema= z.object({
   }),
    source:z.enum([ 'ADMIN','USER']),
    verificationStatus:z.enum(['APPROVED','REJECTED']),
-   reviewedAt:z.date(),
+   reviewedAt:z.coerce.date(),
    field:z.enum([ 'BACKEND','FRONTEND','APPLIED_AI','FULL_STACK','DATA_SCIENCE'])
 })
 
